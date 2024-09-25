@@ -39,7 +39,7 @@ const convertStateDbObjectToResponseDbObject = dbObject => {
   return {
     stateId: dbObject.state_id,
     stateName: dbObject.state_name,
-    populatioin: dbObject.populatioin,
+    population: dbObject.population,
   }
 }
 
@@ -90,7 +90,7 @@ app.post('/login/', async (request, response) => {
     response.status(400)
     response.send('Invalid user')
   } else {
-    isPasswordMatched = await bcrypt.compare(password, database.password)
+    isPasswordMatched = await bcrypt.compare(password, databaseUser.password)
   }
 
   if (isPasswordMatched === true) {
@@ -100,7 +100,7 @@ app.post('/login/', async (request, response) => {
     response.send({jwtToken})
   } else {
     response.status(400)
-    response.send('Invalid Password')
+    response.send('Invalid password')
   }
 })
 
@@ -108,19 +108,19 @@ app.get('/states/', authenticateToken, async (request, response) => {
   const getStatesQuery = `
     SELECT * FROM state;`
 
-  const statesArray = await database.get(getStatesQuery)
+  const statesArray = await database.all(getStatesQuery)
   response.send(
-    statesArray.map(eachState =>
+    statesArray.map((eachState) =>
       convertStateDbObjectToResponseDbObject(eachState),
-    ),
-  )
-})
+    )
+  );
+});
 
 app.get('/states/:stateId/', authenticateToken, async (request, response) => {
   const {stateId} = request.params
 
   const getStateQuery = `
-    SELECT * FROM state WHERE state_id = stateId;`
+    SELECT * FROM state WHERE state_id = ${stateId};`
 
   const state = await database.get(getStateQuery)
   response.send(convertStateDbObjectToResponseDbObject(state))
@@ -130,14 +130,14 @@ app.get(
   '/districts/:districtId',
   authenticateToken,
   async (request, response) => {
-    const {districtId} = request.params
+    const { districtId } = request.params
 
     const getDistrictsQuery = `SELECT 
     * FROM district WHERE district_id = ${districtId};`
 
     const district = await database.get(getDistrictsQuery)
     response.send(convertDistrictDbObjectToResponseDbObject(district))
-  },
+  }
 )
 
 app.post('/districts/', authenticateToken, async (request, response) => {
@@ -145,11 +145,11 @@ app.post('/districts/', authenticateToken, async (request, response) => {
 
   const postDistrictQuery = `
     INSERT INTO district(state_id, district_name, cases, cured, active, deaths)
-    VALUES(${stateId}, '${districtName}', '${cases}', '${cured}', '${active}', '${deaths}');`
+    VALUES(${stateId}, '${districtName}', ${cases}, ${cured}, ${active}, ${deaths} );`
 
   await database.run(postDistrictQuery)
   response.send('District Successfully Added')
-})
+});
 
 app.delete(
   '/districts/:districtId/',
@@ -165,7 +165,7 @@ app.delete(
     await database.run(deleteDistrictQuery)
 
     response.send('District Removed')
-  },
+  }
 )
 
 app.put(
@@ -179,16 +179,16 @@ app.put(
     const updateDistrictQuery = `UPDATE district SET
     district_name = '${districtName}',
     state_id = ${stateId},
-    cases = '${cases}',
-    cured = '${cured}',
-    active = '${active}',
-    deaths = '${deaths}'
+    cases = ${cases},
+    cured = ${cured},
+    active = ${active},
+    deaths = ${deaths}
     WHERE
     district_id = ${districtId};`
 
     await database.run(updateDistrictQuery)
     response.send('District Details Updated')
-  },
+  }
 )
 
 app.get(
@@ -218,5 +218,6 @@ app.get(
   },
 )
 
-module.exports = app
+module.exports = app;
+
 
